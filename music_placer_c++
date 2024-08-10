@@ -1,0 +1,384 @@
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <cstdio>
+#include <fstream>
+#include <bits/stdc++.h>
+using namespace std;
+
+struct node {
+    char song[100];
+    struct node *next;
+    struct node *prev;
+} *top, *temp, *top1;
+
+// Function to add a song to the file
+void tofile(const char a[]) {
+    ofstream f1("playlist.txt", ios::app);
+    f1 << a << endl;
+    f1.close();
+}
+
+// Function to add a new song node to the playlist
+void add_node(struct node *first) {
+    char a[100];
+    while (first->next != NULL) {
+        first = first->next;
+    }
+    first->next = (struct node*)malloc(sizeof(struct node));
+    first->next->prev = first;
+    first = first->next;
+    cout << "\nEnter Song name- ";
+    cin >> a;
+    strcpy(first->song, a);
+    tofile(a);
+    first->next = NULL;
+}
+
+// Function to add a song node from a file
+void add_node_file(struct node *first, const string &a) {
+    while (first->next != NULL) {
+        first = first->next;
+    }
+    first->next = (struct node*)malloc(sizeof(struct node));
+    first->next->prev = first;
+    first = first->next;
+    strcpy(first->song, a.c_str());
+    first->next = NULL;
+}
+
+// Function to delete a song from the playlist file
+void delete_file(const char a[]) {
+    ifstream f1("playlist.txt");
+    ofstream f2("temp.txt");
+    string line;
+    bool found = false;
+    while (getline(f1, line)) {
+        if (line != a) {
+            f2 << line << endl;
+        } else {
+            found = true;
+        }
+    }
+    f1.close();
+    f2.close();
+    remove("playlist.txt");
+    rename("temp.txt", "playlist.txt");
+    if (!found) {
+        cout << "There is no song with the name you entered." << endl;
+    } else {
+        cout << "Song has been deleted." << endl;
+    }
+}
+
+// Function to delete the last node
+void del_node(struct node *first) {
+    while (first->next->next != NULL) {
+        first = first->next;
+    }
+    struct node *temp = first->next;
+    first->next = NULL;
+    free(temp);
+    cout << "Deleted" << endl;
+}
+
+// Function to print the playlist
+void printlist(struct node *first) {
+    cout << "\nPlaylist Name- ";
+    while (first != NULL) {
+        cout << first->song << endl;
+        first = first->next;
+    }
+}
+
+// Function to count the total number of songs
+void count_nodes(struct node *first) {
+    int i = 0;
+    while (first != NULL) {
+        first = first->next;
+        i++;
+    }
+    cout << "\nTotal songs- " << i << endl;
+}
+
+// Function to delete a node by position
+struct node *del_pos(struct node *pointer, int pos) {
+    struct node *prev1 = NULL;
+    struct node *temp = pointer;
+    int i = 0;
+
+    if (pos == 0) {
+        pointer = pointer->next;
+        if (pointer != NULL) {
+            pointer->prev = NULL;
+        }
+        delete_file(temp->song);
+        free(temp);
+        return pointer;
+    }
+
+    while (i < pos - 1 && pointer != NULL) {
+        prev1 = pointer;
+        pointer = pointer->next;
+        i++;
+    }
+
+    if (pointer == NULL) return temp;
+
+    prev1->next = pointer->next;
+    if (pointer->next != NULL) {
+        pointer->next->prev = prev1;
+    }
+    delete_file(pointer->song);
+    free(pointer);
+    return temp;
+}
+
+// Function to search for a song
+void search1(struct node *first) {
+    char song[100];
+    cout << "\nEnter song to be searched- ";
+    cin >> song;
+    bool found = false;
+
+    while (first != NULL) {
+        if (strcmp(first->song, song) == 0) {
+            cout << "\nSong Found" << endl;
+            found = true;
+            break;
+        }
+        first = first->next;
+    }
+    if (!found) {
+        cout << "\nSong Not Found" << endl;
+    }
+}
+
+// Function to initialize the recently played list
+void create() {
+    top = NULL;
+}
+
+// Function to push a song into the recently played list
+void push(const char data[]) {
+    if (top == NULL) {
+        top = (struct node*)malloc(sizeof(struct node));
+        top->next = NULL;
+        strcpy(top->song, data);
+    } else if (strcmp(top->song, data) != 0) {
+        temp = (struct node*)malloc(sizeof(struct node));
+        temp->next = top;
+        strcpy(temp->song, data);
+        top = temp;
+    }
+}
+
+// Function to display the recently played songs
+void display() {
+    top1 = top;
+    if (top1 == NULL) {
+        cout << "\nNo recently played tracks.\n";
+        return;
+    }
+    cout << "\nRecently played tracks-\n";
+    while (top1 != NULL) {
+        cout << top1->song << endl;
+        top1 = top1->next;
+    }
+}
+
+// Function to play a song from the playlist
+void play(struct node *first) {
+    char song[100];
+    printlist(first);
+    cout << "\nChoose song you wish to play- ";
+    cin >> song;
+    bool found = false;
+
+    while (first != NULL) {
+        if (strcmp(first->song, song) == 0) {
+            cout << "\nNow Playing......" << song << endl;
+            found = true;
+            push(song);
+            break;
+        }
+        first = first->next;
+    }
+    if (!found) {
+        cout << "\nSong Not Found" << endl;
+    }
+}
+
+// Function to display the recently played songs
+void recent() {
+    display();
+}
+
+// Function to display the last played song
+void topelement() {
+    if (top == NULL) {
+        cout << "\nNo last played tracks.\n";
+        return;
+    }
+    cout << "\nLast Played Song - " << top->song << endl;
+}
+
+// Function to sort the playlist
+void sort(struct node *&pointer) {
+    struct node *a, *b, *c, *e, *tmp;
+    if (pointer == NULL) return;
+
+    bool swapped;
+    do {
+        swapped = false;
+        a = pointer;
+        while (a->next != NULL) {
+            b = a->next;
+            if (strcmp(a->song, b->song) > 0) {
+                // Swap the nodes
+                tmp = a->next;
+                a->next = b->next;
+                b->next = a;
+                if (a->next != NULL) {
+                    a->next->prev = a;
+                }
+                b->prev = a->prev;
+                if (a->prev != NULL) {
+                    a->prev->next = b;
+                } else {
+                    pointer = b;
+                }
+                a->prev = b;
+                swapped = true;
+            } else {
+                a = a->next;
+            }
+        }
+    } while (swapped);
+}
+
+// Function to add the playlist from a file
+void addplaylist(struct node *start) {
+    ifstream f1("playlist.txt");
+    string line;
+    while (getline(f1, line)) {
+        add_node_file(start, line);
+    }
+    cout << "Playlist Added" << endl;
+    f1.close();
+}
+
+// Function to delete a song by search
+void del_search(struct node *start) {
+    char song[100];
+    printlist(start);
+    cout << "\nChoose song you wish to delete- ";
+    cin >> song;
+    struct node *temp = start;
+    bool found = false;
+
+    while (temp != NULL) {
+        if (strcmp(temp->song, song) == 0) {
+            cout << "\nSong Found" << endl;
+            if (temp->prev != NULL) {
+                temp->prev->next = temp->next;
+            }
+            if (temp->next != NULL) {
+                temp->next->prev = temp->prev;
+            }
+            if (temp == start) {
+                start = temp->next;
+            }
+            delete_file(temp->song);
+            free(temp);
+            found = true;
+            break;
+        }
+        temp = temp->next;
+    }
+    if (!found) {
+        cout << "\nSong Not Found" << endl;
+    }
+}
+
+// Function to choose delete method (by search or position)
+void deletemenu(struct node *start) {
+    int choice;
+    cout << "Which type of delete do you want?\n1. By Search\n2. By Position" << endl;
+    cin >> choice;
+    switch (choice) {
+        case 1:
+            del_search(start);
+            break;
+        case 2: {
+            int pos;
+            cout << "Enter the position of the song: ";
+            cin >> pos;
+            start = del_pos(start, pos - 1);
+            break;
+        }
+        default:
+            cout << "Invalid choice" << endl;
+    }
+}
+
+// Main function to drive the program
+int main() {
+    int choice;
+    struct node *start, *hold;
+    start = (struct node*)malloc(sizeof(struct node));
+    cout << "\t\t\t**WELCOME**" << endl;
+    cout << "\nPlease use '_' for space." << endl;
+    cout << "\n\nEnter your playlist name- ";
+    cin.ignore(); // Ignore any leftover newline characters
+    cin.getline(start->song, 100);
+    start->next = NULL;
+    hold = start;
+    create();
+
+    do {
+        cout << "\n1. Add New Song\n2. Delete Song\n3. Display Entered Playlist\n4. Total Songs\n5. Search Song\n6. Play Song\n7. Recently Played List\n8. Last Played\n9. Sorted Playlist\n10. Add From File\n11. Exit" << endl;
+        cout << "Enter your choice- ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                add_node(start);
+                break;
+            case 2:
+                deletemenu(start);
+                break;
+            case 3:
+                printlist(start);
+                break;
+            case 4:
+                count_nodes(hold);
+                break;
+            case 5:
+                search1(start);
+                break;
+            case 6:
+                play(start);
+                break;
+            case 7:
+                recent();
+                break;
+            case 8:
+                topelement();
+                break;
+            case 9:
+                sort(start);
+                printlist(start);
+                break;
+            case 10:
+                addplaylist(start);
+                break;
+            case 11:
+                exit(0);
+            default:
+                cout << "Invalid choice" << endl;
+        }
+    } while (choice != 11);
+
+    return 0;
+}
